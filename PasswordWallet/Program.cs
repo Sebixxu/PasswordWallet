@@ -12,12 +12,13 @@ namespace PasswordWallet
 {
     class Program
     {
-       // AccountManagement AccountManagement => new AccountManagement();
+        // AccountManagement AccountManagement => new AccountManagement();
 
 
         static void Main(string[] args)
         {
             var isAlive = true;
+            var loginWasSuccesful = false;
             //var accountManagement = new AccountManagement();
             //RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider();
             //var passwordSalt = new byte[512];
@@ -43,31 +44,32 @@ namespace PasswordWallet
                     Console.WriteLine("===| 1) HMAC |===");
                     Console.WriteLine("===| 2) SHA512 |===");
 
-                    var algo = Console.ReadLine();
+                    var algorithm = Console.ReadLine();
 
                     CryptoEnum cryptoEnum = CryptoEnum.None;
-                    if (algo == "1")
-                        cryptoEnum = CryptoEnum.HMAC;
-                    else if (algo == "2")
-                        cryptoEnum = CryptoEnum.SHA512;
+                    switch (algorithm)
+                    {
+                        case "1":
+                            cryptoEnum = CryptoEnum.HMAC;
+                            break;
+                        case "2":
+                            cryptoEnum = CryptoEnum.SHA512;
+                            break;
+                    }
                     Configuration.Configure(cryptoEnum);
 
                     //data for register
-
                     Console.WriteLine("Enter login:");
                     var login = Console.ReadLine();
 
                     Console.WriteLine("Enter password:");
                     var password = Console.ReadLine();
 
-                    AccountManagement.Register(new UserData(login, password), cryptoEnum);
-
-
-                    //Create user account
+                    var resultString = AccountManagement.Register(new UserData(login, password), cryptoEnum); //Create user account
+                    Console.WriteLine(resultString);
                 }
-                else if (data == "2")
+                else if (data == "2") //Login
                 {
-                    //Login
                     Console.WriteLine("Enter login:");
                     var login = Console.ReadLine();
 
@@ -78,19 +80,76 @@ namespace PasswordWallet
                     var userCryptoType = AccountManagement.UserCryptoType(userData.Login);
 
                     Configuration.Configure(userCryptoType);
-                    AccountManagement.EditPassword(userData);
-                }
-                else if (data == "3")
-                {
-                    //test
-                    Console.WriteLine("Enter login:");
-                    var login = Console.ReadLine();
+                    loginWasSuccesful = AccountManagement.Login(userData);
 
-                    Console.WriteLine("Enter password:");
-                    var password = Console.ReadLine();
-                    
-                    
-                    AccountManagement.EditPassword(new UserData(login, password));
+                    if (!loginWasSuccesful)
+                        Console.WriteLine("User data was wrong.");
+                }
+
+                if (loginWasSuccesful)
+                {
+                    Console.WriteLine("===| 1) Show passwords. |===");
+                    Console.WriteLine("===| 2) Store new password. |===");
+                    Console.WriteLine("===| 3) Change master password. |===");
+                    Console.WriteLine("===| 0) Go back. |===");
+                    Console.WriteLine("===| q) Quit. |===");
+
+                    var x = Console.ReadLine();
+
+                    if (x == "0")
+                        return;
+                    else if (x == "q")
+                        isAlive = false; //TODO możliwe żę tu też return trzeba będzie dać
+                    else if (x == "1") //Show passwords
+                    {
+                        var passwordsData = PasswordManagement.GetPasswordsData();
+
+                        foreach (var password in passwordsData)
+                        {
+                            Console.WriteLine($"Web Address: { password.WebAddress } | Login: { password.Login } | Password: { password.Password } | Description: { password.Description }");
+                        }
+                    }
+                    else if (x == "2") //Store password
+                    {
+                        Console.WriteLine("Enter web address:");
+                        var webAddress = Console.ReadLine();
+
+                        Console.WriteLine("Enter login for this website:");
+                        var loginForWebsite = Console.ReadLine();
+
+                        Console.WriteLine("Enter password for this website:");
+                        var passwordForWebsite = Console.ReadLine();
+
+                        Console.WriteLine("Enter description (optional)");
+                        var description = Console.ReadLine();
+
+                        if (string.IsNullOrEmpty(description)) // TODO XD?? XD
+                            description = null;
+
+                        PasswordManagement.StorePassword(new PasswordData { WebAddress = webAddress, Login = loginForWebsite, Password = passwordForWebsite, Description = description });
+                    }
+                    else if (x == "3") //Change Password
+                    {
+                        Console.WriteLine("Enter old password:");
+                        var password = Console.ReadLine();
+
+                        Console.WriteLine("Enter new password:");
+                        var newPassword = Console.ReadLine();
+
+                        Console.WriteLine("Re enter new password:");
+                        var reNewPassword = Console.ReadLine();
+
+                        if (newPassword == reNewPassword)
+                            AccountManagement.ChangePassword(password, newPassword);
+                        else
+                            Console.WriteLine("Password doesn't match.");
+                    }
+
+
+                    //User logic
+                    //Show passwords
+                    //Store password
+                    //Change password -> odszyfruj hasła i zaszyfruj nowym hasłem
                 }
             }
 

@@ -15,8 +15,8 @@ namespace PasswordWallet.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Login = table.Column<string>(nullable: false),
                     PasswordHash = table.Column<byte[]>(nullable: false),
-                    PasswordSalt = table.Column<byte[]>(nullable: true),
-                    IsPasswordHashed = table.Column<bool>(nullable: false)
+                    PasswordSalt = table.Column<byte[]>(nullable: false),
+                    IsHMAC = table.Column<bool>(nullable: false)
                 },
                 constraints: table =>
                 {

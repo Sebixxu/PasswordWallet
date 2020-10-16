@@ -64,8 +64,8 @@ namespace PasswordWallet.Migrations
                         .HasColumnType("int")
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
-                    b.Property<bool>("IsPasswordHashed")
-                        .HasColumnName("IsPasswordHashed")
+                    b.Property<bool>("IsHMAC")
+                        .HasColumnName("IsHMAC")
                         .HasColumnType("bit");
 
                     b.Property<string>("Login")
@@ -79,6 +79,7 @@ namespace PasswordWallet.Migrations
                         .HasColumnType("varbinary(max)");
 
                     b.Property<byte[]>("PasswordSalt")
+                        .IsRequired()
                         .HasColumnName("PasswordSalt")
                         .HasColumnType("varbinary(max)");
 

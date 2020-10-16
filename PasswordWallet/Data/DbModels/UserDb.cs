@@ -19,13 +19,13 @@ namespace PasswordWallet.Data.DbModels
         [Column("PasswordHash", Order = 2)]
         public byte[] PasswordHash { get; set; }
 
-        //[Required]
+        [Required]
         [Column("PasswordSalt", Order = 3)]
         public byte[] PasswordSalt { get; set; }
 
         [Required] //?
-        [Column("IsPasswordHashed", Order = 4)]
-        public bool IsPasswordHashed { get; set; }
+        [Column("IsHMAC", Order = 4)]
+        public bool IsHMAC { get; set; }
 
         public IList<PasswordDb> Passwords { get; set; }
     }

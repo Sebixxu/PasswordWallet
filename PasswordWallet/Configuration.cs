@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reflection;
+using System.Security;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
@@ -16,7 +17,10 @@ namespace PasswordWallet
 {
     public class Configuration
     {
-        public static IContainer Container;
+        protected static string UserName;
+        protected static SecureString Password;
+        protected static IContainer Container;
+        protected static DataContext Context = ContextFactory.GetContext();
 
         public static void Configure(CryptoEnum cryptoEnum)
         {

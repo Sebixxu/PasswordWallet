@@ -10,7 +10,7 @@ using PasswordWallet.Data;
 namespace PasswordWallet.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20201009140706_Init")]
+    [Migration("20201016153003_Init")]
     partial class Init
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -66,8 +66,8 @@ namespace PasswordWallet.Migrations
                         .HasColumnType("int")
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
-                    b.Property<bool>("IsPasswordHashed")
-                        .HasColumnName("IsPasswordHashed")
+                    b.Property<bool>("IsHMAC")
+                        .HasColumnName("IsHMAC")
                         .HasColumnType("bit");
 
                     b.Property<string>("Login")
@@ -81,6 +81,7 @@ namespace PasswordWallet.Migrations
                         .HasColumnType("varbinary(max)");
 
                     b.Property<byte[]>("PasswordSalt")
+                        .IsRequired()
                         .HasColumnName("PasswordSalt")
                         .HasColumnType("varbinary(max)");
 
