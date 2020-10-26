@@ -1,5 +1,8 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
+using System.Runtime.InteropServices;
 using System.Security;
+using PasswordWallet.Helpers;
 
 namespace PasswordWallet.Crypto.Classes
 {
@@ -9,7 +12,8 @@ namespace PasswordWallet.Crypto.Classes
         {
             var aes = new AesAlgorithm();
 
-            var md5 = CreateMd5(userPassword.ToString());
+            var userPasswordString = userPassword.SecureStringToString();
+            var md5 = CreateMd5(userPasswordString);
             var doubleMd5 = md5.Concat(md5).ToArray();
 
             var encryptedPassword = aes.Encrypt(passwordToStore, doubleMd5, md5); //IV - 128 bits ; Key - 256 bits
@@ -21,7 +25,8 @@ namespace PasswordWallet.Crypto.Classes
         {
             var aes = new AesAlgorithm();
 
-            var md5 = CreateMd5(userPassword.ToString());
+            var userPasswordString = userPassword.SecureStringToString();
+            var md5 = CreateMd5(userPasswordString);
             var doubleMd5 = md5.Concat(md5).ToArray();
             var decryptedPassword = aes.Decrypt(passwordBytes, doubleMd5, md5); //IV - 128 bits ; Key - 256 bits
 

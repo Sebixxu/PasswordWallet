@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Security;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using PasswordWallet.BussinessLogic;

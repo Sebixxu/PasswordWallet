@@ -7,6 +7,7 @@ using PasswordWallet.Data;
 using PasswordWallet.Data.Classes;
 using PasswordWallet.Data.DbModels;
 using PasswordWallet.Data.Interfaces;
+using PasswordWallet.Helpers;
 using PasswordWallet.Models;
 
 namespace PasswordWallet.BussinessLogic
@@ -28,7 +29,7 @@ namespace PasswordWallet.BussinessLogic
 
             Context.SaveChanges(); //save
 
-            return "Registration was succesful.";
+            return "Registration was successful.";
         }
 
         public new static bool Login(UserData userData)
@@ -39,7 +40,7 @@ namespace PasswordWallet.BussinessLogic
             if (isPasswordValid)
             {
                 UserName = userData.Login;
-                Password = StringToSecureString(userData.Password);
+                Password = userData.Password.StringToSecureString();
             }
 
             return isPasswordValid;
@@ -58,6 +59,10 @@ namespace PasswordWallet.BussinessLogic
             user.PasswordHash = passwordHash;
             user.PasswordSalt = passwordSalt;
 
+            PasswordManagement.RecryptPasswordForUser(newPassword.StringToSecureString());
+
+            Password = newPassword.StringToSecureString();
+
             Context.SaveChanges();
         }
 
@@ -66,21 +71,6 @@ namespace PasswordWallet.BussinessLogic
             var user = Context.Users.First(x => x.Login == userLogin); //TODO obsługa braku usera o podanym loginie
 
             return user.IsHMAC ? CryptoEnum.HMAC : CryptoEnum.SHA512;
-        }
-
-        private static SecureString StringToSecureString(string input) //TODO To helper
-        {
-            SecureString output = new SecureString();
-
-            int l = input.Length;
-            char[] s = input.ToCharArray(0, l);
-
-            foreach (char c in s)
-            {
-                output.AppendChar(c);
-            }
-
-            return output;
         }
     }
 }

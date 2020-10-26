@@ -71,7 +71,15 @@ namespace PasswordWallet.Crypto.Classes
                 using StreamReader srDecrypt = new StreamReader(csDecrypt);
                 // Read the decrypted bytes from the decrypting stream
                 // and place them in a string.
-                plaintext = srDecrypt.ReadToEnd();
+                try
+                {
+                    plaintext = srDecrypt.ReadToEnd();
+                }
+                catch (CryptographicException)
+                {
+                    Console.WriteLine("Master password was wrong.");
+                    throw;
+                }
             }
 
             return plaintext;

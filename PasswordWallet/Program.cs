@@ -18,14 +18,7 @@ namespace PasswordWallet
         static void Main(string[] args)
         {
             var isAlive = true;
-            var loginWasSuccesful = false;
-            //var accountManagement = new AccountManagement();
-            //RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider();
-            //var passwordSalt = new byte[512];
-
-            //rng.GetBytes(passwordSalt);
-            //string salt = BitConverter.ToString(passwordSalt);
-            //Console.WriteLine(salt);
+            var loginWasSuccessful = false;
 
             Console.WriteLine("===| Menu |===");
             Console.WriteLine("===| 1) Create account. |===");
@@ -80,17 +73,18 @@ namespace PasswordWallet
                     var userCryptoType = AccountManagement.UserCryptoType(userData.Login);
 
                     Configuration.Configure(userCryptoType);
-                    loginWasSuccesful = AccountManagement.Login(userData);
+                    loginWasSuccessful = AccountManagement.Login(userData);
 
-                    if (!loginWasSuccesful)
+                    if (!loginWasSuccessful)
                         Console.WriteLine("User data was wrong.");
                 }
 
-                if (loginWasSuccesful)
+                if (loginWasSuccessful)
                 {
-                    Console.WriteLine("===| 1) Show passwords. |===");
-                    Console.WriteLine("===| 2) Store new password. |===");
-                    Console.WriteLine("===| 3) Change master password. |===");
+                    Console.WriteLine("===| 1) Show specific password. |===");
+                    Console.WriteLine("===| 2) Show passwords. |===");
+                    Console.WriteLine("===| 3) Store new password. |===");
+                    Console.WriteLine("===| 4) Change master password. |===");
                     Console.WriteLine("===| 0) Go back. |===");
                     Console.WriteLine("===| q) Quit. |===");
 
@@ -100,16 +94,30 @@ namespace PasswordWallet
                         return;
                     else if (x == "q")
                         isAlive = false; //TODO możliwe żę tu też return trzeba będzie dać
-                    else if (x == "1") //Show passwords
+                    else if (x == "1")
                     {
-                        var passwordsData = PasswordManagement.GetPasswordsData();
+                        var passwordsData = PasswordManagement.GetPasswordsList();
+
+                        foreach (var password in passwordsData)
+                        {
+                            Console.WriteLine($"Id: {password.Id} | Web Address: { password.WebAddress } | Login: { password.Login } | Description: { password.Description }");
+                        }
+
+                        var id = Console.ReadLine();
+                        var decryptedPassword = PasswordManagement.GetDecryptedPasswordData(int.Parse(id)); //TODO Valid / TryParse
+
+                        Console.WriteLine($"Web Address: { decryptedPassword.WebAddress } | Login: { decryptedPassword.Login } | Password: { decryptedPassword.Password } | Description: { decryptedPassword.Description }");
+                    }
+                    else if (x == "2") //Show passwords
+                    {
+                        var passwordsData = PasswordManagement.GetDecryptedPasswordsData();
 
                         foreach (var password in passwordsData)
                         {
                             Console.WriteLine($"Web Address: { password.WebAddress } | Login: { password.Login } | Password: { password.Password } | Description: { password.Description }");
                         }
                     }
-                    else if (x == "2") //Store password
+                    else if (x == "3") //Store password
                     {
                         Console.WriteLine("Enter web address:");
                         var webAddress = Console.ReadLine();
@@ -128,7 +136,7 @@ namespace PasswordWallet
 
                         PasswordManagement.StorePassword(new PasswordData { WebAddress = webAddress, Login = loginForWebsite, Password = passwordForWebsite, Description = description });
                     }
-                    else if (x == "3") //Change Password
+                    else if (x == "4") //Change Password
                     {
                         Console.WriteLine("Enter old password:");
                         var password = Console.ReadLine();
