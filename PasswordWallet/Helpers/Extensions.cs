@@ -6,7 +6,7 @@ namespace PasswordWallet.Helpers
 {
     public static class Extensions
     {
-        public static SecureString StringToSecureString(this string input) //TODO To helper
+        public static SecureString StringToSecureString(this string input)
         {
             SecureString output = new SecureString();
 
@@ -21,7 +21,7 @@ namespace PasswordWallet.Helpers
             return output;
         }
 
-        public static string SecureStringToString(this SecureString value) //TODO Do Extension methods
+        public static string SecureStringToString(this SecureString value)
         {
             IntPtr valuePtr = IntPtr.Zero;
             try

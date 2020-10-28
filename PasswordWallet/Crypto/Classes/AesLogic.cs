@@ -33,7 +33,7 @@ namespace PasswordWallet.Crypto.Classes
             return decryptedPassword;
         }
 
-        private static byte[] CreateMd5(string input) //TODO Do helpera?
+        private static byte[] CreateMd5(string input) //TODO Do helpera!
         {
             // Use input string to calculate MD5 hash
             using System.Security.Cryptography.MD5 md5 = System.Security.Cryptography.MD5.Create();

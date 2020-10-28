@@ -78,7 +78,7 @@ namespace PasswordWallet.Crypto.Classes
                 catch (CryptographicException)
                 {
                     Console.WriteLine("Master password was wrong.");
-                    throw;
+                    return "";
                 }
             }
 

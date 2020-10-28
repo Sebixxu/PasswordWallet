@@ -12,7 +12,7 @@ namespace PasswordWallet.BussinessLogic
 {
     public class PasswordManagement : Configuration
     {
-        public static void StorePassword(PasswordData passwordData) //other data
+        public static void StorePassword(PasswordData passwordData)
         {
             var aesLogic = new AesLogic();
 
@@ -58,21 +58,6 @@ namespace PasswordWallet.BussinessLogic
             var encryptPassword = aesLogic.DecryptPassword(passwordHash, Password);
 
             return encryptPassword;
-        }
-
-        public static PasswordData GetPasswordData(int id)
-        {
-            var passwordDb = Context.Passwords.First(x => x.Id == id);
-
-            var password = ReleasePassword(passwordDb.PasswordHash);
-
-            return new PasswordData
-            {
-                Login = passwordDb.Login,
-                Password = password,
-                WebAddress = passwordDb.WebAddress,
-                Description = passwordDb.Description
-            };
         }
 
         public static IEnumerable<PasswordData> GetPasswordsList()

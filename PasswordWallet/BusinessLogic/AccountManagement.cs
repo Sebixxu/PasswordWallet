@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Reflection.Metadata.Ecma335;
 using System.Security;
 using Autofac;
 using Microsoft.EntityFrameworkCore;
@@ -34,7 +35,10 @@ namespace PasswordWallet.BussinessLogic
 
         public new static bool Login(UserData userData)
         {
-            var user = Context.Users.First(x => x.Login == userData.Login);
+            var user = Context.Users.FirstOrDefault(x => x.Login == userData.Login);
+            if (user == null)
+                return false;
+            
             var isPasswordValid = Container.Resolve<ICryptoStrategy>().VerifyPasswordHash(userData.Password, user.PasswordHash, user.PasswordSalt);
 
             if (isPasswordValid)
