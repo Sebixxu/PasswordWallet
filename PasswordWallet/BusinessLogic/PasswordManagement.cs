@@ -1,14 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Security;
-using System.Text;
 using PasswordWallet.Crypto.Classes;
-using PasswordWallet.Data;
 using PasswordWallet.Data.DbModels;
-using PasswordWallet.Models;
+using PasswordWallet.Models.Classes;
 
-namespace PasswordWallet.BussinessLogic
+namespace PasswordWallet.BusinessLogic
 {
     public class PasswordManagement : Configuration
     {
@@ -17,7 +14,7 @@ namespace PasswordWallet.BussinessLogic
             var aesLogic = new AesLogic();
 
             var user = Context.Users.First(x => x.Login == UserName);
-            var encryptPassword = aesLogic.EncryptPassword(passwordData.Password, Password);
+            var encryptPassword = aesLogic.EncryptPassword(passwordData.Password, Password); //Get encrypted password
 
             var passwordDb = new PasswordDb
             {
@@ -43,9 +40,9 @@ namespace PasswordWallet.BussinessLogic
 
             foreach (var userPasswordData in userPasswordsData)
             {
-                var websitePassword = ReleasePassword(userPasswordData.PasswordHash);
+                var websitePassword = ReleasePassword(userPasswordData.PasswordHash); //decrypt website password
 
-                userPasswordData.PasswordHash = aesLogic.EncryptPassword(websitePassword, newUserPassword);
+                userPasswordData.PasswordHash = aesLogic.EncryptPassword(websitePassword, newUserPassword); //update old password hash new one
             }
 
             Context.SaveChanges();

@@ -1,4 +1,4 @@
-﻿namespace PasswordWallet.Crypto
+﻿namespace PasswordWallet.Crypto.Interfaces
 {
     public interface IAESDefinition
     {

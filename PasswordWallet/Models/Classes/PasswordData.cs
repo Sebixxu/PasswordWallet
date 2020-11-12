@@ -1,4 +1,4 @@
-﻿namespace PasswordWallet.Models
+﻿namespace PasswordWallet.Models.Classes
 {
     public class PasswordData
     {

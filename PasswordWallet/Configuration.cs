@@ -6,13 +6,12 @@ using Autofac.Extensions.DependencyInjection;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using PasswordWallet.BussinessLogic;
 using PasswordWallet.Crypto;
 using PasswordWallet.Crypto.Classes;
+using PasswordWallet.Crypto.Interfaces;
 using PasswordWallet.Data;
-using PasswordWallet.Data.Classes;
-using PasswordWallet.Data.Interfaces;
 using PasswordWallet.Models;
+using PasswordWallet.Models.Enums;
 
 namespace PasswordWallet
 {

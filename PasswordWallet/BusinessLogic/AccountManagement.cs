@@ -1,26 +1,21 @@
 ﻿using System.Linq;
-using System.Reflection.Metadata.Ecma335;
-using System.Security;
 using Autofac;
-using Microsoft.EntityFrameworkCore;
-using PasswordWallet.Crypto;
-using PasswordWallet.Data;
-using PasswordWallet.Data.Classes;
+using PasswordWallet.Crypto.Interfaces;
 using PasswordWallet.Data.DbModels;
-using PasswordWallet.Data.Interfaces;
 using PasswordWallet.Helpers;
-using PasswordWallet.Models;
+using PasswordWallet.Models.Classes;
+using PasswordWallet.Models.Enums;
 
-namespace PasswordWallet.BussinessLogic
+namespace PasswordWallet.BusinessLogic
 {
     public class AccountManagement : Configuration
     {
         public static string Register(UserData userData, CryptoEnum cryptoEnum) //TODO Kolizja nazw - zajętość
         {
-            Container.Resolve<ICryptoStrategy>().Encrypt(userData.Password, out var passwordHash, out var passwordSalt); //hash
+            Container.Resolve<ICryptoStrategy>().Encrypt(userData.Password, out var passwordHash, out var passwordSalt); //Hash password
             var hmaced = cryptoEnum == CryptoEnum.HMAC;
 
-            Context.Users.Add(new UserDb
+            Context.Users.Add(new UserDb //Prepare object and add to User table
             {
                 IsHMAC = hmaced,
                 Login = userData.Login,
@@ -28,7 +23,7 @@ namespace PasswordWallet.BussinessLogic
                 PasswordSalt = passwordSalt
             });
 
-            Context.SaveChanges(); //save
+            Context.SaveChanges(); //Save to Db
 
             return "Registration was successful.";
         }
@@ -58,21 +53,21 @@ namespace PasswordWallet.BussinessLogic
             if (!isPasswordValid) 
                 return;
 
-            Container.Resolve<ICryptoStrategy>().Encrypt(newPassword, out var passwordHash, out var passwordSalt); //new hash
+            Container.Resolve<ICryptoStrategy>().Encrypt(newPassword, out var passwordHash, out var passwordSalt); //Get hash for new password
 
             user.PasswordHash = passwordHash;
             user.PasswordSalt = passwordSalt;
 
-            PasswordManagement.RecryptPasswordForUser(newPassword.StringToSecureString());
+            PasswordManagement.RecryptPasswordForUser(newPassword.StringToSecureString()); //Recrypt website passwords
 
-            Password = newPassword.StringToSecureString();
+            Password = newPassword.StringToSecureString(); //Cache new password
 
             Context.SaveChanges();
         }
 
         public static CryptoEnum UserCryptoType(string userLogin)
         {
-            var user = Context.Users.First(x => x.Login == userLogin); //TODO obsługa braku usera o podanym loginie
+            var user = Context.Users.First(x => x.Login == userLogin); //TODO Obsługa braku usera o podanym loginie
 
             return user.IsHMAC ? CryptoEnum.HMAC : CryptoEnum.SHA512;
         }

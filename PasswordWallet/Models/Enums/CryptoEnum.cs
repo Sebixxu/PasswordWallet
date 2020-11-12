@@ -1,4 +1,4 @@
-﻿namespace PasswordWallet.Models
+﻿namespace PasswordWallet.Models.Enums
 {
     public enum CryptoEnum
     {

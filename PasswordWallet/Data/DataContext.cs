@@ -3,6 +3,7 @@ using PasswordWallet.Data.DbModels;
 
 namespace PasswordWallet.Data
 {
+    //stuff for creating db
     public class DataContext : DbContext
     {
         public DataContext(DbContextOptions<DataContext> options) : base(options)

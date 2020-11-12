@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Security.Cryptography;
+using PasswordWallet.Crypto.Interfaces;
 
 namespace PasswordWallet.Crypto.Classes
 {
@@ -78,7 +79,7 @@ namespace PasswordWallet.Crypto.Classes
                 catch (CryptographicException)
                 {
                     Console.WriteLine("Master password was wrong.");
-                    return "";
+                    throw;
                 }
             }
 

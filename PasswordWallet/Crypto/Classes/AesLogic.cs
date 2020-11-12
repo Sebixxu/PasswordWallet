@@ -13,8 +13,8 @@ namespace PasswordWallet.Crypto.Classes
             var aes = new AesAlgorithm();
 
             var userPasswordString = userPassword.SecureStringToString();
-            var md5 = CreateMd5(userPasswordString);
-            var doubleMd5 = md5.Concat(md5).ToArray();
+            var md5 = CryptoHelper.CreateMd5(userPasswordString); //prepare necessary data
+            var doubleMd5 = md5.Concat(md5).ToArray(); //prepare necessary data
 
             var encryptedPassword = aes.Encrypt(passwordToStore, doubleMd5, md5); //IV - 128 bits ; Key - 256 bits
 
@@ -26,22 +26,11 @@ namespace PasswordWallet.Crypto.Classes
             var aes = new AesAlgorithm();
 
             var userPasswordString = userPassword.SecureStringToString();
-            var md5 = CreateMd5(userPasswordString);
-            var doubleMd5 = md5.Concat(md5).ToArray();
+            var md5 = CryptoHelper.CreateMd5(userPasswordString); //prepare necessary data
+            var doubleMd5 = md5.Concat(md5).ToArray(); //prepare necessary data
             var decryptedPassword = aes.Decrypt(passwordBytes, doubleMd5, md5); //IV - 128 bits ; Key - 256 bits
 
             return decryptedPassword;
-        }
-
-        private static byte[] CreateMd5(string input) //TODO Do helpera!
-        {
-            // Use input string to calculate MD5 hash
-            using System.Security.Cryptography.MD5 md5 = System.Security.Cryptography.MD5.Create();
-
-            byte[] inputBytes = System.Text.Encoding.ASCII.GetBytes(input);
-            byte[] hashBytes = md5.ComputeHash(inputBytes);
-
-            return hashBytes;
         }
     }
 }

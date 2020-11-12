@@ -6,10 +6,12 @@ using System.Reflection.Metadata;
 using System.Security.Cryptography;
 using Autofac;
 using Microsoft.EntityFrameworkCore.Internal;
-using PasswordWallet.BussinessLogic;
+using PasswordWallet.BusinessLogic;
 using PasswordWallet.Crypto;
 using PasswordWallet.Crypto.Classes;
 using PasswordWallet.Models;
+using PasswordWallet.Models.Classes;
+using PasswordWallet.Models.Enums;
 
 namespace PasswordWallet
 {
@@ -33,7 +35,6 @@ namespace PasswordWallet
                     isAlive = false;
                 else if (data == "1") //Register
                 {
-                    //choosing hmac or sha512
                     Console.WriteLine("Pick one of algo to store your master password:");
                     Console.WriteLine("===| 1) HMAC |===");
                     Console.WriteLine("===| 2) SHA512 |===");
@@ -60,7 +61,6 @@ namespace PasswordWallet
 
                     var resultString = AccountManagement.Register(new UserData(login, password), cryptoEnum); //Create user account
                     Console.WriteLine(resultString);
-                    //Console.WriteLine("Press 2 and hit enter to login.");
                 }
                 else if (data == "2") //Login
                 {
@@ -96,7 +96,7 @@ namespace PasswordWallet
                             Console.WriteLine("Shutdown.. Thanks for using app.");
                             Environment.Exit(0);
                         }
-                        else if (x == "1")
+                        else if (x == "1") //Show one password
                         {
                             var passwordsData = PasswordManagement.GetPasswordsList().ToList();
 
@@ -115,7 +115,7 @@ namespace PasswordWallet
 
                             Console.WriteLine($"Web Address: { decryptedPassword.WebAddress } | Login: { decryptedPassword.Login } | Password: { decryptedPassword.Password } | Description: { decryptedPassword.Description }");
                         }
-                        else if (x == "2") //Show passwords
+                        else if (x == "2") //Show all passwords
                         {
                             var passwordsData = PasswordManagement.GetDecryptedPasswordsData().ToList();
 
@@ -127,7 +127,7 @@ namespace PasswordWallet
 
                             foreach (var password in passwordsData)
                                 Console.WriteLine($"Web Address: { password.WebAddress } | Login: { password.Login } | Password: { password.Password } | Description: { password.Description }");
-                            
+
                         }
                         else if (x == "3") //Store password
                         {
@@ -164,18 +164,9 @@ namespace PasswordWallet
                             else
                                 Console.WriteLine("Password doesn't match.");
                         }
-
-
-                        //User logic
-                        //Show passwords
-                        //Store password
-                        //Change password -> odszyfruj hasła i zaszyfruj nowym hasłem
                     }
                 }
-
             }
-
-            Console.WriteLine("Bye bye!");
         }
     }
 }
