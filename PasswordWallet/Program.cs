@@ -84,7 +84,7 @@ namespace PasswordWallet
                     else
                     {
                         Console.WriteLine("Your data was wrong.");
-                        if(loginResult.TimeoutDurationInSeconds > 0)
+                        if (loginResult.TimeoutDurationInSeconds > 0)
                             Console.WriteLine($"Please wait {loginResult.TimeoutDurationInSeconds} second since try login once again.");
                     }
                     //Console.WriteLine(loginWasSuccessful ? "Login was successful." : "User data was wrong.");
@@ -98,6 +98,7 @@ namespace PasswordWallet
                         Console.WriteLine("===| 2) Show passwords. |===");
                         Console.WriteLine("===| 3) Store new password. |===");
                         Console.WriteLine("===| 4) Change master password. |===");
+                        Console.WriteLine("===| 5) Show login data. |===");
                         Console.WriteLine("===| q) Quit. |===");
 
                         var x = Console.ReadLine();
@@ -174,6 +175,16 @@ namespace PasswordWallet
                                 AccountManagement.ChangePassword(password, newPassword);
                             else
                                 Console.WriteLine("Password doesn't match.");
+                        }
+                        else if (x == "5")
+                        {
+                            var allLoginAttemptsDataForUser = AccountManagement.GetLoginAttemptsView();
+
+                            Console.WriteLine("Login Attempt Date  | Was Succesfull?");
+                            foreach (var attemptsData in allLoginAttemptsDataForUser)
+                            {
+                                Console.WriteLine($"{ attemptsData.LoginAttemptDate } | { attemptsData.WasSuccess }");
+                            }
                         }
                     }
                 }

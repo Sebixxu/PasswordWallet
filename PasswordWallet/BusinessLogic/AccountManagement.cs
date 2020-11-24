@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Autofac;
 using PasswordWallet.Crypto.Interfaces;
@@ -36,18 +37,24 @@ namespace PasswordWallet.BusinessLogic
 
         private static bool ProcessLoginAttempt(UserData userData, out int timeoutDurationInSeconds)
         {
+            timeoutDurationInSeconds = 0;
+            bool loginWasCorrect = false, dataWasCorrect = false, shouldSaveAttempt = true;
             int setTimeoutDurationInSeconds = 0;
+
             var currentTime = DateTime.Now;
             TimeSpan timeSinceLastLoginAttempt; // TODO
+
             var currentUserId = Context.Users.First(x => x.Login == userData.Login).Id;
 
-            var lastLoginAttempt = Context.LoginAttempts.Where(x => x.IdUser == currentUserId && !x.IsStale).OrderByDescending(y => y.LoginAttemptDate).FirstOrDefault();
+            var lastLoginAttempt = Context.LoginAttempts.Where(x => x.IdUser == currentUserId && !x.IsStale && !x.WasSuccess).OrderByDescending(y => y.LoginAttemptDate).FirstOrDefault();
             if (lastLoginAttempt != null)
                 timeSinceLastLoginAttempt = currentTime - lastLoginAttempt.LoginAttemptDate; // Złe odejmowanie czasu chyba
             else
                 timeSinceLastLoginAttempt = TimeSpan.Zero;
 
-            switch (CheckLoginPossibility(currentUserId))
+            var blockLevel = CheckLoginPossibility(currentUserId);
+
+            switch (blockLevel)
             {
                 case BlockLevel.None: //All good - could check data is valid
                     break;
@@ -55,78 +62,99 @@ namespace PasswordWallet.BusinessLogic
                 case BlockLevel.FirstLevel:
                     {
                         {
-                            var deltaTime = (int)BlockLevel.FirstLevel - timeSinceLastLoginAttempt.Seconds;
+                            var deltaTime = (int)BlockLevel.FirstLevel - (int)timeSinceLastLoginAttempt.TotalSeconds;
                             timeoutDurationInSeconds = deltaTime > 0 ? deltaTime : 0;
-                            {
-                                setTimeoutDurationInSeconds = deltaTime;
-                                //return false;
-                            }
                         }
                         break;
                     }
                 case BlockLevel.SecondLevel:
                     {
                         {
-                            var deltaTime = (int)BlockLevel.SecondLevel - timeSinceLastLoginAttempt.Seconds;
+                            var deltaTime = (int)BlockLevel.SecondLevel - (int)timeSinceLastLoginAttempt.TotalSeconds;
                             timeoutDurationInSeconds = deltaTime > 0 ? deltaTime : 0;
-                            {
-                                setTimeoutDurationInSeconds = deltaTime;
-                                //return false;
-                            }
                         }
                         break;
                     }
                 case BlockLevel.ThirdLevel:
                     {
                         {
-                            var deltaTime = (int)BlockLevel.ThirdLevel - timeSinceLastLoginAttempt.Seconds;
+                            var deltaTime = (int)BlockLevel.ThirdLevel - (int)timeSinceLastLoginAttempt.TotalSeconds;
                             timeoutDurationInSeconds = deltaTime > 0 ? deltaTime : 0;
-                            {
-                                setTimeoutDurationInSeconds = deltaTime;
-                                //return false;
-                            }
                         }
                         break;
                     }
             }
 
+            List<LoginAttemptsDb> previousLoginAttempts = null;
             if (!CheckLoginDataIsValid(userData)) // Check login data is correct
             {
                 //If not save login try with fail - quit from app
 
+                //Fail - this time no ban
+
+                dataWasCorrect = false;
+
+                //jeśli dane są nieprawidłowe, to już tutaj pokazywac (czas)ban + 1? 
+
+                timeoutDurationInSeconds = (int)blockLevel;
+
+                //if (blockLevel == BlockLevel.ThirdLevel)
+                //    timeoutDurationInSeconds = (int) BlockLevel.ThirdLevel;
+
+                previousLoginAttempts = Context.LoginAttempts.Where(x => x.IdUser == currentUserId && !x.IsStale && x.WasSuccess).ToList();
+            }
+            else
+            {
+                var previousLoginAttempts2 = Context.LoginAttempts.Where(x => x.IdUser == currentUserId && !x.IsStale && !x.WasSuccess).ToList();
+
+                if (timeoutDurationInSeconds > 0 && previousLoginAttempts2.Count != 1) //Dane poprawne ale ciagle ban
+                {
+                    BlockLevel currentBlockLevel = BlockLevel.None;
+
+                    shouldSaveAttempt = false;
+                    dataWasCorrect = false;
+                    //if (blockLevel != BlockLevel.ThirdLevel)
+                    //    currentBlockLevel = GetPreviousBlockLevel(blockLevel);
+                    //else
+                    //    currentBlockLevel = BlockLevel.ThirdLevel;
+                    currentBlockLevel = GetPreviousBlockLevel(blockLevel);
+
+                    //if (previousLoginAttempts2.Count == 1)
+                    //    timeoutDurationInSeconds = 0;
+                     if (previousLoginAttempts2.Count < 4)
+                        timeoutDurationInSeconds = (int)currentBlockLevel - (int)timeSinceLastLoginAttempt.TotalSeconds;
+                }
+                else
+                {
+                    previousLoginAttempts = Context.LoginAttempts.Where(x => x.IdUser == currentUserId && !x.IsStale).ToList();
+                    dataWasCorrect = true;
+                }
+            }
+
+            previousLoginAttempts?.ForEach(x => x.IsStale = true);
+
+            //If ok - set all previous data of login trails with this file to state "stale"
+
+            if (shouldSaveAttempt)
+            {
                 Context.LoginAttempts.Add(new LoginAttemptsDb
                 {
                     LoginAttemptDate = DateTime.Now,
                     IsStale = false,
+                    WasSuccess = dataWasCorrect,
                     IdUser = currentUserId
                 });
-
-                Context.SaveChanges();
-
-                //Fail - this time no ban
-                {
-                    timeoutDurationInSeconds = setTimeoutDurationInSeconds;
-                    return false;
-                }
             }
-
-            //If ok - set all previous data of login trails with this file to state "stale"
-
-            var previousLoginAttempts = Context.LoginAttempts.Where(x => x.IdUser == currentUserId).ToList();
-            previousLoginAttempts.ForEach(x => x.IsStale = true);
 
             Context.SaveChanges();
 
+            return dataWasCorrect;
             //Success - no ban
-            {
-                timeoutDurationInSeconds = 0;
-                return true;
-            }
         }
 
         private static BlockLevel CheckLoginPossibility(int userId)
         {
-            var previousLoginAttempts = Context.LoginAttempts.Where(x => x.IdUser == userId && !x.IsStale).ToList();
+            var previousLoginAttempts = Context.LoginAttempts.Where(x => x.IdUser == userId && !x.IsStale && !x.WasSuccess).ToList();
 
             switch (previousLoginAttempts.Count)
             {
@@ -151,6 +179,40 @@ namespace PasswordWallet.BusinessLogic
             //4 fails = 2 min block
 
             //return enum? - BlockLevel
+        }
+
+        private static BlockLevel GetPreviousBlockLevel(BlockLevel currentBlockLevel)
+        {
+            switch (currentBlockLevel)
+            {
+                case BlockLevel.FirstLevel:
+                    return BlockLevel.None;
+                case BlockLevel.SecondLevel:
+                    return BlockLevel.FirstLevel;
+                case BlockLevel.ThirdLevel:
+                    return BlockLevel.SecondLevel;
+                default:
+                    return BlockLevel.None;
+            }
+        }
+
+        public static IList<LoginAttemptsData> GetLoginAttemptsView()
+        {
+            IList<LoginAttemptsData> attemptsAttemptsData = new List<LoginAttemptsData>();
+
+            var user = Context.Users.First(x => x.Login == UserName);
+            var loginAttempts = Context.LoginAttempts.Where(x => x.IdUser == user.Id).OrderByDescending(x => x.LoginAttemptDate).ToList();
+
+            foreach (var loginAttempt in loginAttempts)
+            {
+                attemptsAttemptsData.Add(new LoginAttemptsData
+                {
+                    LoginAttemptDate = loginAttempt.LoginAttemptDate,
+                    WasSuccess = loginAttempt.WasSuccess
+                });
+            }
+
+            return attemptsAttemptsData;
         }
 
         public static string Register(UserData userData, CryptoEnum cryptoEnum) //TODO Kolizja nazw - zajętość

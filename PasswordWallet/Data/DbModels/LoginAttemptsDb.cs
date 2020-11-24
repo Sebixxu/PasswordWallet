@@ -16,11 +16,15 @@ namespace PasswordWallet.Data.DbModels
         public DateTime LoginAttemptDate { get; set; }
 
         [Required]
-        [Column("IsStale", Order = 2)]
+        [Column("WasSuccess", Order = 2)]
+        public bool WasSuccess { get; set; }
+
+        [Required]
+        [Column("IsStale", Order = 3)]
         public bool IsStale { get; set; }
 
         [Required]
-        [Column("IdUser", Order = 3)]
+        [Column("IdUser", Order = 4)]
         public int IdUser { get; set; }
 
         public UserDb User { get; set; }
