@@ -74,9 +74,20 @@ namespace PasswordWallet
                     var userCryptoType = AccountManagement.UserCryptoType(userData.Login);
 
                     Configuration.Configure(userCryptoType);
-                    loginWasSuccessful = AccountManagement.Login(userData);
+                    var loginResult = AccountManagement.ProcessLogin(userData);
+                    loginWasSuccessful = loginResult.IsSuccess;
 
-                    Console.WriteLine(loginWasSuccessful ? "Login was successful." : "User data was wrong.");
+                    if (loginWasSuccessful)
+                    {
+                        Console.WriteLine("Login was successful.");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Your data was wrong.");
+                        if(loginResult.TimeoutDurationInSeconds > 0)
+                            Console.WriteLine($"Please wait {loginResult.TimeoutDurationInSeconds} second since try login once again.");
+                    }
+                    //Console.WriteLine(loginWasSuccessful ? "Login was successful." : "User data was wrong.");
                 }
 
                 if (loginWasSuccessful)

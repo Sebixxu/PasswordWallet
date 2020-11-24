@@ -2,12 +2,12 @@
 {
     public class AlgoOperationsAdapter : AlgoOperations
     {
-        public new bool IsValidPassword(string password, string passwordToCheck)
+        public override bool IsValidPassword(string password, string passwordToCheck)
         {
             return true;
         }
 
-        public new bool IsEnoughCharacters(string potentialPassword)
+        public override bool IsEnoughCharacters(string potentialPassword)
         {
             return true;
         }

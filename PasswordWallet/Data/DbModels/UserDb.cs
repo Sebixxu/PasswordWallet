@@ -28,5 +28,6 @@ namespace PasswordWallet.Data.DbModels
         public bool IsHMAC { get; set; }
 
         public IList<PasswordDb> Passwords { get; set; }
+        public IList<LoginAttemptsDb> LoginAttempts { get; set; }
     }
 }

@@ -26,6 +26,14 @@ namespace PasswordWallet.Data
                 .HasOne(p => p.User)
                 .WithMany(u => u.Passwords)
                 .HasForeignKey(p => p.IdUser);
+
+            builder.Entity<LoginAttemptsDb>()
+                .HasKey(p => p.Id);
+
+            builder.Entity<LoginAttemptsDb>()
+                .HasOne(p => p.User)
+                .WithMany(u => u.LoginAttempts)
+                .HasForeignKey(p => p.IdUser);
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -38,6 +46,7 @@ namespace PasswordWallet.Data
 
         public DbSet<UserDb> Users { get; set; }
         public DbSet<PasswordDb> Passwords { get; set; }
+        public DbSet<LoginAttemptsDb> LoginAttempts { get; set; }
 
         #endregion
     }

@@ -2,7 +2,7 @@
 {
     public class AlgoOperations
     {
-        public bool IsValidPassword(string password, string passwordToCheck)
+        public virtual bool IsValidPassword(string password, string passwordToCheck)
         {
             if (password == passwordToCheck)
                 return true;
@@ -10,7 +10,7 @@
             return false;
         }
 
-        public bool IsEnoughCharacters(string potentialPassword)
+        public virtual bool IsEnoughCharacters(string potentialPassword)
         {
             if (potentialPassword.Length > 8)
                 return true;
