@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PasswordWallet.Data;
 
 namespace PasswordWallet.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20201201170732_Add_IpAttemptsTable")]
+    partial class Add_IpAttemptsTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -35,10 +37,6 @@ namespace PasswordWallet.Migrations
                     b.Property<bool>("IsStale")
                         .HasColumnName("IsStale")
                         .HasColumnType("bit");
-
-                    b.Property<DateTime>("LoginAttemptDate")
-                        .HasColumnName("LoginAttemptDate")
-                        .HasColumnType("datetime2");
 
                     b.Property<bool>("WasSuccess")
                         .HasColumnName("WasSuccess")

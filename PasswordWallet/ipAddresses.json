@@ -1,6 +1,7 @@
 {
-  "pickedAddress": 0,
-  "ipAddresses": [
+  "currentIpIndex": 1,
+  "ipAddresses": 
+  [
     "192.168.1.0",
     "192.168.1.1",
     "192.168.1.2",

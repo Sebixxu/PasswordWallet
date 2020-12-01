@@ -74,7 +74,7 @@ namespace PasswordWallet
                     var userCryptoType = AccountManagement.UserCryptoType(userData.Login);
 
                     Configuration.Configure(userCryptoType);
-                    var loginResult = AccountManagement.ProcessLogin(userData);
+                    var loginResult = AccountManagement.ProcessLoginAttempt2(userData);
                     loginWasSuccessful = loginResult.IsSuccess;
 
                     if (loginWasSuccessful)

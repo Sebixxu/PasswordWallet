@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Autofac;
+using Newtonsoft.Json;
 using PasswordWallet.Crypto.Interfaces;
 using PasswordWallet.Data.DbModels;
 using PasswordWallet.Helpers;
@@ -13,6 +15,100 @@ namespace PasswordWallet.BusinessLogic
 {
     public class AccountManagement : Configuration
     {
+        public static LoginResult ProcessLoginAttempt2(UserData userData)
+        {
+            var currentTime = DateTime.Now;
+
+            var currentUserId = Context.Users.First(x => x.Login == userData.Login).Id;
+            var previousLoginAttempts = Context.LoginAttempts
+                .Where(x => x.IdUser == currentUserId && !x.IsStale && !x.WasSuccess).ToList();
+            var countPreviousFails = previousLoginAttempts.Count;
+
+            if (CheckLoginDataIsValid(userData))
+            {
+                //Dane są poprawne
+
+                if (countPreviousFails == 0 || countPreviousFails == 1)
+                {
+                    var currentPreviousLoginAttempts = Context.LoginAttempts
+                        .Where(x => x.IdUser == currentUserId && !x.IsStale && !x.WasSuccess).ToList();
+                    currentPreviousLoginAttempts?.ForEach(x => x.IsStale = true);
+
+                    SaveLoginAttempt(currentTime, currentUserId, true, true);
+
+                    return new LoginResult
+                    {
+                        TimeoutDurationInSeconds = 0,
+                        IsSuccess = true
+                    };
+                }
+                else
+                {
+                    int banTimeout = GetBanTimeoutDuration(countPreviousFails);
+
+                    var lastLoginAttempt = Context.LoginAttempts
+                        .Where(x => x.IdUser == currentUserId && !x.IsStale && !x.WasSuccess)
+                        .OrderByDescending(y => y.LoginAttemptDate).FirstOrDefault();
+
+                    TimeSpan timeSinceLastLoginAttempt = currentTime - lastLoginAttempt.LoginAttemptDate;
+
+                    if (timeSinceLastLoginAttempt.TotalSeconds >= banTimeout)
+                    {
+                        var currentPreviousLoginAttempts = Context.LoginAttempts
+                            .Where(x => x.IdUser == currentUserId && !x.IsStale && !x.WasSuccess).ToList();
+                        currentPreviousLoginAttempts?.ForEach(x => x.IsStale = true);
+
+                        SaveLoginAttempt(currentTime, currentUserId, true, true);
+
+                        //Ban minął
+                        return new LoginResult
+                        {
+                            TimeoutDurationInSeconds = 0,
+                            IsSuccess = true
+                        };
+                    }
+                    else
+                    {
+                        //zostało timeSinceLastLoginAttempt.TotalSeconds bana
+                        return new LoginResult
+                        {
+                            TimeoutDurationInSeconds = banTimeout - (int)timeSinceLastLoginAttempt.TotalSeconds,
+                            IsSuccess = false
+                        };
+                    }
+                }
+            }
+            else
+            {
+                //Dane są błędne
+
+                SaveLoginAttempt(currentTime, currentUserId, false, false);
+
+                int newTimeout = GetBanTimeoutDurationToShow(countPreviousFails);
+
+                return new LoginResult
+                {
+                    TimeoutDurationInSeconds = newTimeout,
+                    IsSuccess = false
+                };
+            }
+        }
+
+        private static void SaveLoginAttempt(DateTime currentTime, int currentUserId, bool isStale, bool wasSuccess)
+        {
+            Context.LoginAttempts.Add(new LoginAttemptsDb
+            {
+                LoginAttemptDate = currentTime,
+                IsStale = isStale,
+                WasSuccess = wasSuccess,
+                IdUser = currentUserId,
+                //IdIpAttempt = ipAttemptsDb.Id // TODO
+            });
+
+            Context.SaveChanges();
+        }
+
+
         public static LoginResult ProcessLogin(UserData userData) //return second until can login ? if 0 process login?
         {
             //Add somewhere check there is for user user with this nick? If not return false without any process
@@ -52,40 +148,29 @@ namespace PasswordWallet.BusinessLogic
             else
                 timeSinceLastLoginAttempt = TimeSpan.Zero;
 
-            var blockLevel = CheckLoginPossibility(currentUserId);
+            int blockTime = 0;
+            BlockLevel currentPickedBlockLevel = BlockLevel.None;
+            var currentIpAddress = GetCurrentIpAddress();
+            var blockLevelByUser = CheckLoginPossibilityByUser(currentUserId);
+            var blockLevelByIp = CheckLoginPossibilityByIp(currentIpAddress);
 
-            switch (blockLevel)
+            //[Mój]
+            if (blockLevelByUser == BlockLevel.None)
             {
-                case BlockLevel.None: //All good - could check data is valid
-                    break;
 
-                case BlockLevel.FirstLevel:
-                    {
-                        {
-                            var deltaTime = (int)BlockLevel.FirstLevel - (int)timeSinceLastLoginAttempt.TotalSeconds;
-                            timeoutDurationInSeconds = deltaTime > 0 ? deltaTime : 0;
-                        }
-                        break;
-                    }
-                case BlockLevel.SecondLevel:
-                    {
-                        {
-                            var deltaTime = (int)BlockLevel.SecondLevel - (int)timeSinceLastLoginAttempt.TotalSeconds;
-                            timeoutDurationInSeconds = deltaTime > 0 ? deltaTime : 0;
-                        }
-                        break;
-                    }
-                case BlockLevel.ThirdLevel:
-                    {
-                        {
-                            var deltaTime = (int)BlockLevel.ThirdLevel - (int)timeSinceLastLoginAttempt.TotalSeconds;
-                            timeoutDurationInSeconds = deltaTime > 0 ? deltaTime : 0;
-                        }
-                        break;
-                    }
+            }
+            else
+            {
+                //currentPickedBlockLevel = GetBlockLevel(blockLevelByUser, blockLevelByIp);
+                currentPickedBlockLevel = blockLevelByUser;
+                blockTime = (int)currentPickedBlockLevel;
+
+                var deltaTime = blockTime - (int)timeSinceLastLoginAttempt.TotalSeconds;
+                timeoutDurationInSeconds = deltaTime > 0 ? deltaTime : 0;
             }
 
             List<LoginAttemptsDb> previousLoginAttempts = null;
+            List<IpAttemptsDb> previousIpAttempts = null;
             if (!CheckLoginDataIsValid(userData)) // Check login data is correct
             {
                 //If not save login try with fail - quit from app
@@ -96,18 +181,20 @@ namespace PasswordWallet.BusinessLogic
 
                 //jeśli dane są nieprawidłowe, to już tutaj pokazywac (czas)ban + 1? 
 
-                timeoutDurationInSeconds = (int)blockLevel;
+                timeoutDurationInSeconds = blockTime;
 
                 //if (blockLevel == BlockLevel.ThirdLevel)
                 //    timeoutDurationInSeconds = (int) BlockLevel.ThirdLevel;
 
                 previousLoginAttempts = Context.LoginAttempts.Where(x => x.IdUser == currentUserId && !x.IsStale && x.WasSuccess).ToList();
+                previousIpAttempts = Context.IpAttempts.Where(x => x.IpAddress == currentIpAddress && !x.IsStale && x.WasSuccess).ToList();
             }
             else
             {
                 var previousLoginAttempts2 = Context.LoginAttempts.Where(x => x.IdUser == currentUserId && !x.IsStale && !x.WasSuccess).ToList();
+                var previousIpAttempts2 = Context.IpAttempts.Where(x => x.IpAddress == currentIpAddress && !x.IsStale && !x.WasSuccess).ToList();
 
-                if (timeoutDurationInSeconds > 0 && previousLoginAttempts2.Count != 1) //Dane poprawne ale ciagle ban
+                if (timeoutDurationInSeconds > 0 && (previousLoginAttempts2.Count != 1 || (previousIpAttempts2.Count != 1 && previousIpAttempts2.Count != 0))) //Dane poprawne ale ciagle ban
                 {
                     BlockLevel currentBlockLevel = BlockLevel.None;
 
@@ -117,32 +204,47 @@ namespace PasswordWallet.BusinessLogic
                     //    currentBlockLevel = GetPreviousBlockLevel(blockLevel);
                     //else
                     //    currentBlockLevel = BlockLevel.ThirdLevel;
-                    currentBlockLevel = GetPreviousBlockLevel(blockLevel);
+                    currentBlockLevel = GetPreviousBlockLevel(currentPickedBlockLevel); // Todo
 
                     //if (previousLoginAttempts2.Count == 1)
                     //    timeoutDurationInSeconds = 0;
-                     if (previousLoginAttempts2.Count < 4)
+                    if (previousLoginAttempts2.Count < 4)
                         timeoutDurationInSeconds = (int)currentBlockLevel - (int)timeSinceLastLoginAttempt.TotalSeconds;
                 }
                 else
                 {
                     previousLoginAttempts = Context.LoginAttempts.Where(x => x.IdUser == currentUserId && !x.IsStale).ToList();
+                    previousIpAttempts = Context.IpAttempts.Where(x => x.IpAddress == currentIpAddress && !x.IsStale).ToList();
                     dataWasCorrect = true;
                 }
             }
 
             previousLoginAttempts?.ForEach(x => x.IsStale = true);
+            previousIpAttempts?.ForEach(x => x.IsStale = true);
 
             //If ok - set all previous data of login trails with this file to state "stale"
 
             if (shouldSaveAttempt)
             {
+                var ipAttemptsDb = new IpAttemptsDb
+                {
+                    LoginAttemptDate = DateTime.Now,
+                    IpAddress = currentIpAddress,
+                    IsStale = false,
+                    WasSuccess = dataWasCorrect
+                };
+
+                Context.IpAttempts.Add(ipAttemptsDb);
+
+                Context.SaveChanges();
+
                 Context.LoginAttempts.Add(new LoginAttemptsDb
                 {
                     LoginAttemptDate = DateTime.Now,
                     IsStale = false,
                     WasSuccess = dataWasCorrect,
-                    IdUser = currentUserId
+                    IdUser = currentUserId,
+                    IdIpAttempt = ipAttemptsDb.Id
                 });
             }
 
@@ -152,9 +254,46 @@ namespace PasswordWallet.BusinessLogic
             //Success - no ban
         }
 
-        private static BlockLevel CheckLoginPossibility(int userId)
+        private static BlockLevel GetBlockLevel(BlockLevel userBlockLevel, BlockLevel ipBlockLevel)
+        {
+            if ((int)userBlockLevel >= (int)ipBlockLevel)
+                return userBlockLevel;
+
+            return ipBlockLevel;
+        }
+
+        private static BlockLevel CheckLoginPossibilityByUser(int userId)
         {
             var previousLoginAttempts = Context.LoginAttempts.Where(x => x.IdUser == userId && !x.IsStale && !x.WasSuccess).ToList();
+
+            switch (previousLoginAttempts.Count)
+            {
+                case 0:
+                    return BlockLevel.None;
+                case 1:
+                    return BlockLevel.FirstLevel;
+                case 2:
+                    return BlockLevel.SecondLevel;
+                case 3:
+                    return BlockLevel.ThirdLevel;
+            }
+
+            return previousLoginAttempts.Count >= 4 ? BlockLevel.ThirdLevel : BlockLevel.None;
+
+            //Get all not stale data of tries login for this user
+
+            //left block time counts from last failed login
+            //0/1 fails = all good
+            //2 fails = 5 sec block
+            //3 fails = 10 sec block
+            //4 fails = 2 min block
+
+            //return enum? - BlockLevel
+        }
+
+        private static BlockLevel CheckLoginPossibilityByIp(string ipAddress)
+        {
+            var previousLoginAttempts = Context.IpAttempts.Where(x => x.IpAddress == ipAddress && !x.IsStale && !x.WasSuccess).ToList();
 
             switch (previousLoginAttempts.Count)
             {
@@ -194,6 +333,74 @@ namespace PasswordWallet.BusinessLogic
                 default:
                     return BlockLevel.None;
             }
+        }
+
+        private static string GetCurrentIpAddress()
+        {
+            IpInfo ipInfo;
+            using (StreamReader r = new StreamReader("ipAddresses.json"))
+            {
+                string json = r.ReadToEnd();
+                ipInfo = JsonConvert.DeserializeObject<IpInfo>(json);
+            }
+
+            return ipInfo.ipAddresses[ipInfo.currentIpIndex];
+        }
+
+        private static int GetBanTimeoutDuration(int countPreviousFails)
+        {
+            int banTimeout;
+            switch (countPreviousFails)
+            {
+                case 0:
+                    banTimeout = 0;
+                    break;
+                case 1:
+                    banTimeout = 0;
+                    break;
+                case 2:
+                    banTimeout = 30;
+                    break;
+                case 3:
+                    banTimeout = 60;
+                    break;
+                default:
+                    banTimeout = 120;
+                    break;
+            }
+
+            return banTimeout;
+        }
+
+        private static int GetBanTimeoutDurationToShow(int countPreviousFails)
+        {
+            int banTimeout;
+            switch (countPreviousFails)
+            {
+                case 0:
+                    banTimeout = 0;
+                    break;
+                case 1:
+                    banTimeout = 30;
+                    break;
+                case 2:
+                    banTimeout = 60;
+                    break;
+                case 3:
+                    banTimeout = 120;
+                    break;
+                default:
+                    banTimeout = 120;
+                    break;
+            }
+
+            return banTimeout;
+        }
+
+        public class IpInfo
+        {
+            public int currentIpIndex;
+            public string[] ipAddresses;
         }
 
         public static IList<LoginAttemptsData> GetLoginAttemptsView()

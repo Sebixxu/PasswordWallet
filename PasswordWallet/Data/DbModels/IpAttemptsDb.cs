@@ -1,10 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace PasswordWallet.Data.DbModels
 {
-    public class LoginAttemptsDb
+    public class IpAttemptsDb
     {
         [Key]
         [Required]
@@ -12,26 +13,21 @@ namespace PasswordWallet.Data.DbModels
         public int Id { get; set; }
 
         [Required]
-        [Column("LoginAttemptDate", Order = 1)]
+        [Column("IpAddress", Order = 1)]
+        public string IpAddress{ get; set; }
+
+        [Required]
+        [Column("LoginAttemptDate", Order = 2)]
         public DateTime LoginAttemptDate { get; set; }
 
         [Required]
-        [Column("WasSuccess", Order = 2)]
+        [Column("WasSuccess", Order = 3)]
         public bool WasSuccess { get; set; }
 
         [Required]
-        [Column("IsStale", Order = 3)]
+        [Column("IsStale", Order = 4)]
         public bool IsStale { get; set; }
 
-        [Required]
-        [Column("IdUser", Order = 4)]
-        public int IdUser { get; set; }
-
-        [Required]
-        [Column("IdIpAttempt", Order = 5)]
-        public int IdIpAttempt { get; set; }
-
-        public UserDb User { get; set; }
-        public IpAttemptsDb IpAttempt { get; set; }
+        public IList<LoginAttemptsDb> LoginAttempts { get; set; }
     }
 }
