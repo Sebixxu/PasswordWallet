@@ -38,10 +38,10 @@ namespace PasswordWallet.Data
             builder.Entity<IpAttemptsDb>()
                 .HasKey(p => p.Id);
 
-            builder.Entity<LoginAttemptsDb>()
-                .HasOne(p => p.IpAttempt)
-                .WithMany(a => a.LoginAttempts)
-                .HasForeignKey(p => p.IdIpAttempt);
+            builder.Entity<IpAttemptsDb>()
+                .HasOne(p => p.User)
+                .WithMany(u => u.IpAttempts)
+                .HasForeignKey(p => p.IdUser);
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

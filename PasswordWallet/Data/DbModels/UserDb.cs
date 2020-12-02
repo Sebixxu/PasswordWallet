@@ -29,5 +29,6 @@ namespace PasswordWallet.Data.DbModels
 
         public IList<PasswordDb> Passwords { get; set; }
         public IList<LoginAttemptsDb> LoginAttempts { get; set; }
+        public IList<IpAttemptsDb> IpAttempts { get; set; }
     }
 }

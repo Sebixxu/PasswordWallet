@@ -28,6 +28,10 @@ namespace PasswordWallet.Data.DbModels
         [Column("IsStale", Order = 4)]
         public bool IsStale { get; set; }
 
-        public IList<LoginAttemptsDb> LoginAttempts { get; set; }
+        [Required]
+        [Column("IdUser", Order = 5)]
+        public int IdUser { get; set; }
+
+        public UserDb User { get; set; }
     }
 }

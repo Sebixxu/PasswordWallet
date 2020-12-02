@@ -74,11 +74,12 @@ namespace PasswordWallet
                     var userCryptoType = AccountManagement.UserCryptoType(userData.Login);
 
                     Configuration.Configure(userCryptoType);
-                    var loginResult = AccountManagement.ProcessLoginAttempt2(userData);
+                    var loginResult = AccountManagement.ProcessLoginAttemptByIp(userData);
                     loginWasSuccessful = loginResult.IsSuccess;
 
                     if (loginWasSuccessful)
                     {
+                        AccountManagement.Login(userData);
                         Console.WriteLine("Login was successful.");
                     }
                     else
@@ -86,6 +87,8 @@ namespace PasswordWallet
                         Console.WriteLine("Your data was wrong.");
                         if (loginResult.TimeoutDurationInSeconds > 0)
                             Console.WriteLine($"Please wait {loginResult.TimeoutDurationInSeconds} second since try login once again.");
+                        else if (loginResult.TimeoutDurationInSeconds == -1)
+                            Console.WriteLine("Your address IP are permanently banned.");
                     }
                     //Console.WriteLine(loginWasSuccessful ? "Login was successful." : "User data was wrong.");
                 }
@@ -98,7 +101,8 @@ namespace PasswordWallet
                         Console.WriteLine("===| 2) Show passwords. |===");
                         Console.WriteLine("===| 3) Store new password. |===");
                         Console.WriteLine("===| 4) Change master password. |===");
-                        Console.WriteLine("===| 5) Show login data. |===");
+                        Console.WriteLine("===| 5) Show user login data. |===");
+                        Console.WriteLine("===| 6) Show ip addresses data. |===");
                         Console.WriteLine("===| q) Quit. |===");
 
                         var x = Console.ReadLine();
@@ -184,6 +188,29 @@ namespace PasswordWallet
                             foreach (var attemptsData in allLoginAttemptsDataForUser)
                             {
                                 Console.WriteLine($"{ attemptsData.LoginAttemptDate } | { attemptsData.WasSuccess }");
+                            }
+                        }
+                        else if (x == "6")
+                        {
+                            var bannedIpAddresses = AccountManagement.GetPermanentlyBannedIpAddresses();
+
+                            Console.WriteLine("Ip Address  | Is Banned Pernamently?");
+                            if(bannedIpAddresses.Any())
+                                foreach (var bannedIpAddress in bannedIpAddresses)
+                                    Console.WriteLine($"{ bannedIpAddress } | true");
+                            else
+                                Console.WriteLine($"No address found.");
+
+                            Console.WriteLine("Enter password which you want unlock or type 0) to skip this process.");
+                            var z = Console.ReadLine();
+
+                            if (z == "0")
+                                continue;
+
+                            if (bannedIpAddresses.Contains(z))
+                            {
+                                AccountManagement.UnbanIpAddress(z);
+                                Console.WriteLine("Address was unbanned.");
                             }
                         }
                     }

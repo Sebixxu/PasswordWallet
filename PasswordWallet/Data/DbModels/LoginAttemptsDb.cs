@@ -27,11 +27,6 @@ namespace PasswordWallet.Data.DbModels
         [Column("IdUser", Order = 4)]
         public int IdUser { get; set; }
 
-        [Required]
-        [Column("IdIpAttempt", Order = 5)]
-        public int IdIpAttempt { get; set; }
-
         public UserDb User { get; set; }
-        public IpAttemptsDb IpAttempt { get; set; }
     }
 }
