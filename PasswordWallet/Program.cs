@@ -201,7 +201,7 @@ namespace PasswordWallet
                             else
                                 Console.WriteLine($"No address found.");
 
-                            Console.WriteLine("Enter password which you want unlock or type 0) to skip this process.");
+                            Console.WriteLine("Enter ip address which you want unlock or type 0) to skip this process.");
                             var z = Console.ReadLine();
 
                             if (z == "0")

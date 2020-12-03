@@ -162,7 +162,7 @@ namespace PasswordWallet.BusinessLogic
                         .Where(x => x.IdUser == currentUserId && !x.IsStale && !x.WasSuccess)
                         .OrderByDescending(y => y.LoginAttemptDate).FirstOrDefault();
 
-                    TimeSpan timeSinceLastLoginAttempt = currentTime - lastLoginAttempt.LoginAttemptDate;
+                    var timeSinceLastLoginAttempt = CalculateTimeSinceLastLoginAttempt(currentTime, lastLoginAttempt);
 
                     if (timeSinceLastLoginAttempt.TotalSeconds >= banTimeout)
                     {
@@ -206,6 +206,13 @@ namespace PasswordWallet.BusinessLogic
             }
         }
 
+        public static TimeSpan CalculateTimeSinceLastLoginAttempt(DateTime currentTime, LoginAttemptsDb lastLoginAttempt)
+        {
+            TimeSpan timeSinceLastLoginAttempt = currentTime - lastLoginAttempt.LoginAttemptDate;
+
+            return timeSinceLastLoginAttempt;
+        }
+
         private static void SaveLoginAttempt(DateTime currentTime, int currentUserId, bool isStale, bool wasSuccess)
         {
             Context.LoginAttempts.Add(new LoginAttemptsDb
@@ -228,10 +235,11 @@ namespace PasswordWallet.BusinessLogic
                 ipInfo = JsonConvert.DeserializeObject<IpInfo>(json);
             }
 
-            return ipInfo.ipAddresses[ipInfo.currentIpIndex];
+            return ipInfo.IpAddresses[ipInfo.CurrentIpIndex];
         }
 
-        private static int GetBanTimeoutDuration(int countPreviousFails)
+        //todo je do helpera ip i account
+        public static int GetBanTimeoutDuration(int countPreviousFails)
         {
             int banTimeout;
             switch (countPreviousFails)
@@ -256,7 +264,7 @@ namespace PasswordWallet.BusinessLogic
             return banTimeout;
         }
 
-        private static int GetBanTimeoutDurationForIp(int countPreviousFails)
+        public static int GetBanTimeoutDurationForIp(int countPreviousFails)
         {
             int banTimeout;
             switch (countPreviousFails)
@@ -281,7 +289,7 @@ namespace PasswordWallet.BusinessLogic
             return banTimeout;
         }
 
-        private static int GetBanTimeoutDurationToShow(int countPreviousFails)
+        public static int GetBanTimeoutDurationToShow(int countPreviousFails)
         {
             int banTimeout;
             switch (countPreviousFails)
@@ -306,7 +314,7 @@ namespace PasswordWallet.BusinessLogic
             return banTimeout;
         }
 
-        private static int GetBanTimeoutDurationToShowForIp(int countPreviousFails)
+        public static int GetBanTimeoutDurationToShowForIp(int countPreviousFails)
         {
             int banTimeout;
             switch (countPreviousFails)
@@ -331,13 +339,7 @@ namespace PasswordWallet.BusinessLogic
             return banTimeout;
         }
 
-        public class IpInfo
-        {
-            public int currentIpIndex;
-            public string[] ipAddresses;
-        }
-
-        public static IList<LoginAttemptData> GetLoginAttemptsView() //Błąd, pusta kolekcja
+        public static IList<LoginAttemptData> GetLoginAttemptsView()
         {
             IList<LoginAttemptData> attemptsAttemptsData = new List<LoginAttemptData>();
 
@@ -358,7 +360,7 @@ namespace PasswordWallet.BusinessLogic
 
         public static IList<string> GetPermanentlyBannedIpAddresses()
         {
-            var b =
+            var query =
                 from i in Context.IpAttempts
                 where i.IsStale == false && i.WasSuccess == false 
                 group i by i.IpAddress
@@ -369,7 +371,7 @@ namespace PasswordWallet.BusinessLogic
                     count = g.Count()
                 };
 
-            var permanentlyBannedIpAddresses = b.Where(x => x.count >= 4).Select(y => y.ipAddress).ToList();
+            var permanentlyBannedIpAddresses = query.Where(x => x.count >= 4).Select(y => y.ipAddress).ToList();
 
             return permanentlyBannedIpAddresses;
         }
@@ -385,12 +387,6 @@ namespace PasswordWallet.BusinessLogic
             }
 
             Context.SaveChanges();
-        }
-
-        public static void Logout()
-        {
-            UserName = null;
-            Password = null;
         }
 
         public static string Register(UserData userData, CryptoEnum cryptoEnum) //TODO Kolizja nazw - zajętość
@@ -411,7 +407,7 @@ namespace PasswordWallet.BusinessLogic
             return "Registration was successful.";
         }
 
-        public new static void Login(UserData userData)
+        public static void Login(UserData userData)
         {
             UserName = userData.Login;
             Password = userData.Password.StringToSecureString();
