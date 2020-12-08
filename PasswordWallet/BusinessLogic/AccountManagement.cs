@@ -339,7 +339,7 @@ namespace PasswordWallet.BusinessLogic
             return banTimeout;
         }
 
-        public static IList<LoginAttemptData> GetLoginAttemptsView()
+        public static IEnumerable<LoginAttemptData> GetLoginAttemptsView()
         {
             IList<LoginAttemptData> attemptsAttemptsData = new List<LoginAttemptData>();
 
@@ -362,7 +362,7 @@ namespace PasswordWallet.BusinessLogic
         {
             var query =
                 from i in Context.IpAttempts
-                where i.IsStale == false && i.WasSuccess == false 
+                where i.IsStale == false && i.WasSuccess == false
                 group i by i.IpAddress
                 into g
                 select new
@@ -447,6 +447,26 @@ namespace PasswordWallet.BusinessLogic
             var user = Context.Users.First(x => x.Login == userLogin); //TODO Obsługa braku usera o podanym loginie
 
             return user.IsHMAC ? CryptoEnum.HMAC : CryptoEnum.SHA512;
+        }
+
+        public static IEnumerable<UserInfo> GetAllOtherUserInfo()
+        {
+            IList<UserInfo> userInfos = new List<UserInfo>();
+            var userDbs = Context.Users.ToList();
+
+            foreach (var userDb in userDbs)
+            {
+                userInfos.Add(
+                    new UserInfo
+                    {
+                        Id = userDb.Id,
+                        Username = userDb.Login
+                    });
+            }
+
+            userInfos.Remove(userInfos.Single(x => x.Username == UserName)); //Remove current user
+
+            return userInfos;
         }
     }
 }

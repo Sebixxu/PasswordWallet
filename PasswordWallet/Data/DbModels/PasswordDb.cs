@@ -31,5 +31,7 @@ namespace PasswordWallet.Data.DbModels
 
         public UserDb User { get; set; }
 
+        public IList<PendingPasswordSharesDb> PendingPasswordShares { get; set; }
+        //public IList<PendingPasswordSharesDb> PendingSharedPasswordShares { get; set; }
     }
 }

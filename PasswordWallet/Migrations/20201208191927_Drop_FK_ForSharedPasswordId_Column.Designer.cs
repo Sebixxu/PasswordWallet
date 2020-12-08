@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PasswordWallet.Data;
 
 namespace PasswordWallet.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20201208191927_Drop_FK_ForSharedPasswordId_Column")]
+    partial class Drop_FK_ForSharedPasswordId_Column
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -147,7 +149,7 @@ namespace PasswordWallet.Migrations
                         .HasColumnName("PasswordId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("SharedPasswordId")
+                    b.Property<int>("SharedPasswordId")
                         .HasColumnName("SharedPasswordId")
                         .HasColumnType("int");
 

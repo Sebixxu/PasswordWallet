@@ -23,12 +23,18 @@ namespace PasswordWallet.Data.DbModels
         [Column("PasswordSalt", Order = 3)]
         public byte[] PasswordSalt { get; set; }
 
-        [Required] //?
+        [Required]
         [Column("IsHMAC", Order = 4)]
         public bool IsHMAC { get; set; }
 
         public IList<PasswordDb> Passwords { get; set; }
+
+        //
         public IList<LoginAttemptsDb> LoginAttempts { get; set; }
         public IList<IpAttemptsDb> IpAttempts { get; set; }
+        //
+
+        public IList<PendingPasswordSharesDb> SourcePendingPasswordShares { get; set; }
+        public IList<PendingPasswordSharesDb> DestinationPendingPasswordShares { get; set; }
     }
 }

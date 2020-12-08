@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PasswordWallet.Data;
 
 namespace PasswordWallet.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20201208191527_Add_SharedPasswordId_column")]
+    partial class Add_SharedPasswordId_column
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -147,7 +149,7 @@ namespace PasswordWallet.Migrations
                         .HasColumnName("PasswordId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("SharedPasswordId")
+                    b.Property<int>("SharedPasswordId")
                         .HasColumnName("SharedPasswordId")
                         .HasColumnType("int");
 
@@ -160,6 +162,8 @@ namespace PasswordWallet.Migrations
                     b.HasIndex("DestinationUserId");
 
                     b.HasIndex("PasswordId");
+
+                    b.HasIndex("SharedPasswordId");
 
                     b.HasIndex("SourceUserId");
 
@@ -239,6 +243,12 @@ namespace PasswordWallet.Migrations
                     b.HasOne("PasswordWallet.Data.DbModels.PasswordDb", "Password")
                         .WithMany("PendingPasswordShares")
                         .HasForeignKey("PasswordId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("PasswordWallet.Data.DbModels.PasswordDb", "SharedPassword")
+                        .WithMany("PendingSharedPasswordShares")
+                        .HasForeignKey("SharedPasswordId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 

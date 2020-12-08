@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PasswordWallet.Data;
 
 namespace PasswordWallet.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20201208171953_Add_PendingPasswordShares")]
+    partial class Add_PendingPasswordShares
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -145,10 +147,6 @@ namespace PasswordWallet.Migrations
 
                     b.Property<int>("PasswordId")
                         .HasColumnName("PasswordId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("SharedPasswordId")
-                        .HasColumnName("SharedPasswordId")
                         .HasColumnType("int");
 
                     b.Property<int>("SourceUserId")
