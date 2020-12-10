@@ -11,6 +11,7 @@ using PasswordWallet.Crypto.Classes;
 using PasswordWallet.Crypto.Interfaces;
 using PasswordWallet.Data;
 using PasswordWallet.Models;
+using PasswordWallet.Models.Classes;
 using PasswordWallet.Models.Enums;
 
 namespace PasswordWallet
@@ -19,6 +20,7 @@ namespace PasswordWallet
     {
         protected static string UserName;
         protected static SecureString Password;
+        protected static ApplicationMode ApplicationMode = ApplicationMode.ReadMode;
         protected static IContainer Container;
         protected static DataContext Context = ContextFactory.GetContext();
 

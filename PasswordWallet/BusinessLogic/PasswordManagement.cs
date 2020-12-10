@@ -5,6 +5,7 @@ using System.Security.Cryptography.X509Certificates;
 using PasswordWallet.Crypto.Classes;
 using PasswordWallet.Data.DbModels;
 using PasswordWallet.Models.Classes;
+using PasswordWallet.Models.Classes.Results;
 
 namespace PasswordWallet.BusinessLogic
 {
@@ -12,6 +13,83 @@ namespace PasswordWallet.BusinessLogic
     {
         private static string RandomData =
             "WNA1IRfs9xQilUq3roTCOHeymadXo0K8IHHpgBZKnjDa035fNBkg8gUm4hl5ETc6YlHii6ZuUZwoEjwJrBUBV9iOutadGBO65uN7HZt2957NAjJU4jcbGjCrc8Lv163I";
+
+        public static EditPasswordPossibility CheckEditPasswordPossibility(int passwordId) //Tu raczej wystarczyło by sprawdzenie isShared ale ciul
+        {
+            var isShared = Context.PendingPasswordShares.FirstOrDefault(x => x.SharedPasswordId == passwordId) != null;
+            var currentUserId = Context.Users.FirstOrDefault(x => x.Login == UserName)?.Id;
+            var isOwner = Context.PendingPasswordShares
+                .Where(x => x.PasswordId == passwordId && x.SourceUserId == currentUserId).ToList().Any();
+
+            if (isShared && !isOwner)
+                return EditPasswordPossibility.NoAccess;
+
+            return EditPasswordPossibility.Ok;
+        }
+
+        public static void EditPassword(EditPasswordData editPasswordData)
+        {
+            var aesLogic = new AesLogic();
+
+            //update na password
+            var password = Context.Passwords.FirstOrDefault(x => x.Id == editPasswordData.PasswordId);
+
+            if (password == null)
+                return;
+
+            if (!string.IsNullOrEmpty(editPasswordData.NewLogin))
+                password.Login = editPasswordData.NewLogin;
+
+            if (!string.IsNullOrEmpty(editPasswordData.NewWebAddress))
+                password.WebAddress = editPasswordData.NewWebAddress;
+
+            if (!string.IsNullOrEmpty(editPasswordData.NewDescription))
+                password.Description = editPasswordData.NewDescription;
+
+            if (!string.IsNullOrEmpty(editPasswordData.NewPassword))
+                password.PasswordHash = aesLogic.EncryptPassword(editPasswordData.NewPassword, Password);
+
+            var passwordsIdsFromSharedPasswords = Context.PendingPasswordShares.Where(x => x.PasswordId == editPasswordData.PasswordId)
+                .Select(y => y.SharedPasswordId).ToList(); //From Passwords by received from SharedPasswordIds
+
+            foreach (var passwordId in passwordsIdsFromSharedPasswords)
+            {
+                var passwordDb = Context.Passwords.FirstOrDefault(x => x.Id == passwordId);
+                if (passwordDb != null)
+                    Context.Passwords.Remove(passwordDb);
+
+                var sharedPasswordDb =
+                    Context.PendingPasswordShares.FirstOrDefault(x => x.SharedPasswordId == passwordId);
+                if (sharedPasswordDb != null)
+                    Context.PendingPasswordShares.Remove(sharedPasswordDb);
+            }
+
+            Context.SaveChanges();
+        }
+
+        public static void RemovePassword(int passwordId)
+        {
+            var passwordsIdsFromSharedPasswords = Context.PendingPasswordShares.Where(x => x.PasswordId == passwordId)
+                .Select(y => y.SharedPasswordId).ToList(); //From Passwords by received from SharedPasswordIds
+
+            foreach (var passwordIdFromSharedPassword in passwordsIdsFromSharedPasswords)
+            {
+                var passwordDb = Context.Passwords.FirstOrDefault(x => x.Id == passwordIdFromSharedPassword);
+                if (passwordDb != null)
+                    Context.Passwords.Remove(passwordDb);
+
+                var sharedPasswordDb =
+                    Context.PendingPasswordShares.FirstOrDefault(x => x.SharedPasswordId == passwordIdFromSharedPassword);
+                if (sharedPasswordDb != null)
+                    Context.PendingPasswordShares.Remove(sharedPasswordDb);
+            }
+
+            var mainWebPasswordDb = Context.Passwords.FirstOrDefault(x => x.Id == passwordId);
+            if (mainWebPasswordDb != null)
+                Context.Passwords.Remove(mainWebPasswordDb);
+
+            Context.SaveChanges();
+        }
 
         public static void SendRequestOfSharingPassword(int destinationUserId, int passwordId) //todo chyba do passmanagement
         {
@@ -206,7 +284,7 @@ namespace PasswordWallet.BusinessLogic
                 var password = ReleasePassword(userPasswordData.PasswordHash);
                 var isShared = Context.PendingPasswordShares.FirstOrDefault(x => x.SharedPasswordId == userPasswordData.Id) != null;
 
-                if(isShared)
+                if (isShared)
                     continue;
 
                 decryptPasswords.Add(new PasswordData
@@ -244,6 +322,23 @@ namespace PasswordWallet.BusinessLogic
             }
 
             return pendingPasswordSharesInfo;
+        }
+
+        public static void SwitchApplicationMode()
+        {
+            if (ApplicationMode == ApplicationMode.ReadMode)
+            {
+                ApplicationMode = ApplicationMode.ModifyMode;
+            }
+            else if (ApplicationMode == ApplicationMode.ModifyMode)
+            {
+                ApplicationMode = ApplicationMode.ReadMode;
+            }
+        }
+
+        public static ApplicationMode GetApplicationMode()
+        {
+            return ApplicationMode;
         }
     }
 }

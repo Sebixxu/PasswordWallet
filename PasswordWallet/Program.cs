@@ -11,6 +11,7 @@ using PasswordWallet.Crypto;
 using PasswordWallet.Crypto.Classes;
 using PasswordWallet.Models;
 using PasswordWallet.Models.Classes;
+using PasswordWallet.Models.Classes.Results;
 using PasswordWallet.Models.Enums;
 
 namespace PasswordWallet
@@ -113,14 +114,18 @@ namespace PasswordWallet
                         }
                         else if (x == "1") //Show one password => Manage passwords
                         {
+                            Console.WriteLine($"===| You are in {GetApplicationModeString()} type 0) to change mode. |===");
+                            Console.WriteLine($"===| ============================================ |===");
                             Console.WriteLine("===| 1) Show specific password. |===");
                             Console.WriteLine("===| 2) Show passwords. |==="); //todo  remove
                             Console.WriteLine("===| 3) Share specific password. |===");
                             Console.WriteLine("===| 4) Show pending passwords. |===");
+                            Console.WriteLine("===| 5) Manage your password data. |==="); //List all, allow change only personal passwords
 
                             var y = Console.ReadLine();
-
-                            if (y == "1")
+                            if (y == "0")
+                                PasswordManagement.SwitchApplicationMode();
+                            else if (y == "1")
                             {
                                 var passwordsData = PasswordManagement.GetPasswordsList().ToList();
 
@@ -181,6 +186,62 @@ namespace PasswordWallet
                                 var shareId = Console.ReadLine();
 
                                 PasswordManagement.AcceptPasswordShare(int.Parse(shareId));
+                            }
+                            else if (y == "5")
+                            {
+                                Console.WriteLine("Trying enter password modifying platform..");
+
+                                if (PasswordManagement.GetApplicationMode() == ApplicationMode.ReadMode)
+                                {
+                                    Console.WriteLine("To enter this functionalities you need switch to modify mode in aplication.");
+                                    continue;
+                                }
+
+                                ShowPasswordsData(PasswordManagement.GetDecryptedPasswordsData().ToList());
+
+                                Console.WriteLine("Type id password which you want manage:");
+                                var idPassword = Console.ReadLine();
+
+                                if (PasswordManagement.CheckEditPasswordPossibility(int.Parse(idPassword)) == EditPasswordPossibility.Ok)
+                                {
+                                    Console.WriteLine("What you want to do?");
+
+                                    Console.WriteLine("1) Edit password data.");
+                                    Console.WriteLine("2) Remove password.");
+
+                                    var editType = Console.ReadLine();
+
+                                    if (editType == "1")
+                                    {
+                                        Console.WriteLine("Fill all new data, if you don't want to change something, leave field empty.");
+
+                                        Console.WriteLine("Login");
+                                        var newLogin = Console.ReadLine();
+                                        Console.WriteLine("Password");
+                                        var newPassword = Console.ReadLine();
+                                        Console.WriteLine("Web Address");
+                                        var newWebAddress = Console.ReadLine();
+                                        Console.WriteLine("Description");
+                                        var newDescription = Console.ReadLine();
+
+                                        PasswordManagement.EditPassword(new EditPasswordData
+                                        {
+                                            PasswordId = int.Parse(idPassword),
+                                            NewLogin = newLogin,
+                                            NewPassword = newPassword,
+                                            NewWebAddress = newWebAddress,
+                                            NewDescription = newDescription
+                                        });
+                                    }
+                                    else if (editType == "2")
+                                    {
+                                        PasswordManagement.RemovePassword(int.Parse(idPassword));
+                                    }
+                                }
+                                else
+                                {
+                                    Console.WriteLine("No access to modify this password.");
+                                }
                             }
                             else
                             {
@@ -276,6 +337,17 @@ namespace PasswordWallet
                 Console.WriteLine(
                         $"{isSharedString}Id: {password.Id} |Web Address: {password.WebAddress} | Login: {password.Login} | Password: {password.Password} | Description: {password.Description}");
             }
+        }
+
+        private static string GetApplicationModeString()
+        {
+            if (PasswordManagement.GetApplicationMode() == ApplicationMode.ReadMode)
+                return "Read Mode";
+
+            if (PasswordManagement.GetApplicationMode() == ApplicationMode.ModifyMode)
+                return "Modify Mode";
+
+            return "";
         }
     }
 }
